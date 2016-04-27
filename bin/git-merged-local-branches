@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+#
+# Outputs all local branches that have been merged into a given branch or, if
+# none is provided, origin/master.
+#
+# For example, to delete them you could run:
+#   git merged-local-branches | xargs git branch -d
+
+set -euo pipefail
+
+basebranch="${1:-origin/master}"
+
+git branch --merged "$basebranch" \
+    | rg -N -v '^\*\s+' \
+    | rg -N -v '^\*?\s+master' \
+    | cut -c 3-

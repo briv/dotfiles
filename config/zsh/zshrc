@@ -1,0 +1,108 @@
+## History
+export HISTSIZE=50000
+export HISTFILE=~/.zsh_history
+export SAVEHIST="$HISTSIZE"
+# Do not enter command lines into the history list if they are duplicates of
+# the previous event.
+setopt histignorealldups
+# Share history while sessions are open.
+setopt share_history
+
+#for f in $(find $DOTFILES/zsh -type f); do source $f; done
+
+# Key bindings
+bindkey -v # Use vi mode
+bindkey '^A' beginning-of-line
+bindkey '^E' end-of-line
+bindkey '^B' backward-word
+bindkey '^F' forward-word
+
+# zaw for historical search, filtering, and quick git branch access
+zaw_history=~/.zaw/zaw.zsh
+if [ -f "$zaw_history" ]; then
+    source "$zaw_history"
+    bindkey '^R' zaw-history
+    bindkey '^G' zaw-git-branches
+fi
+unset zaw_history
+
+function clean_zsh_history {
+#    fc -ln -1000000 | awk 'length<500' | rg -v '^fc .*' | rg -v '^cd .*' | rg -v '^rg .*' | rg -v '^git .*' | rg -v '^tmux .*' | rg -v '^nv .*' | rg -v '^yarn .*' | rg -v '^bundle .*' | rg -v '^bime_.*' | rg -v '^ll' | rg -v '^lla' | rg -v '^npm .*' | rg -v '^cat .*' | rg -v '^brew .*' | rg -v '^cat .*' | wc -l
+}
+
+# Prompt
+autoload -U colors && colors
+
+function get_prompt {
+    echo "%{$fg[white]%}%D{%H:%M}%{$reset_color%} %{$fg[green]%}%1~%{$reset_color%} ❯ "
+}
+
+export PS1="$(get_prompt)"
+
+export RPS1=
+# Show vi normal mode in right prompt
+# see http://dougblack.io/words/zsh-vi-mode.html
+function zle-line-init zle-keymap-select {
+    local VIM_PROMPT="%{$fg_bold[yellow]%}[NORMAL]%{$reset_color%}  "
+    RPS1="${${KEYMAP/vicmd/"$VIM_PROMPT"}/(main|viins)/}"
+    zle reset-prompt
+}
+zle -N zle-line-init
+zle -N zle-keymap-select
+
+## Aliases and functions
+alias l='ls -lhG'
+alias ll='l -a'
+alias nv='nvim'
+
+# vc - short for vim choice originally - lets you fuzzy-search for files using
+# fzf to open in your $EDITOR
+function vc {
+    local files
+    if [ "$(git rev-parse --is-inside-work-tree 2>/dev/null)" = true ]; then
+        files=(${(f)$(git ls-files | fzf -m "$@")})
+    else
+        files=("${(@f)$(rg --files | fzf -m "$@")}")
+    fi
+
+    if [ $? -eq 0 ]; then
+        $EDITOR "${files[@]}"
+    fi
+}
+
+# todo
+# If the current directory contains a TODO.md file, open it.
+# Otherwise, open the global TODO.md document, found in $DOCUMENTS folder.
+function todo {
+    # Check
+    if [[ -a ./TODO.md ]]; then
+        $EDITOR ./TODO.md
+    else
+        $EDITOR "$DOCUMENTS/TODO.md"
+    fi
+}
+
+# direnv setup
+eval "$(direnv hook zsh)"
+
+function precmd_update_prompt_nix_shell {
+    if [[ -v IN_NIX_SHELL ]]; then
+        if [[ -v __zsh_prompt_cache_is_in_nix_shell ]]; then
+            # Do nothing, the prompt should already be set correctly.
+        else
+            PS1="%{$fg[blue]%}[nix]%{$reset_color%} $PS1"
+            __zsh_prompt_cache_is_in_nix_shell=1
+        fi
+    elif [[ -v __zsh_prompt_cache_is_in_nix_shell ]]; then
+        PS1="$(get_prompt)"
+        unset __zsh_prompt_cache_is_in_nix_shell
+    fi
+}
+autoload -U add-zsh-hook
+add-zsh-hook precmd precmd_update_prompt_nix_shell
+
+# Source local configuration
+local_config=~/.config/zsh/local.zsh
+if [ -f "$local_config" ]; then
+    source "$local_config"
+fi

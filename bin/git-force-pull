@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+#
+# Soft resets the current branch to its upstream, if any.
+
+set -euo pipefail
+
+currentbranch=$(git rev-parse --abbrev-ref HEAD)
+upstream=$(git for-each-ref --format='%(upstream:short)' \
+    "$(git symbolic-ref -q HEAD)")
+
+if [ -z "$upstream" ]; then
+    printf "%s '%s'\n" 'No upstream tracked by current branch:' "$currentbranch"
+    exit 1
+fi
+
+git fetch
+if [ "$(git rev-parse "$currentbranch")" ==  \
+    "$(git rev-parse "$upstream")" ]; then
+    printf "%s '%s' %s\n" 'Branch' "$currentbranch" 'is already up-to-date'
+else
+    git diff --name-status "$currentbranch" "$upstream"
+    printf "\nReset '%s' to '%s' ? [yes/no] " "$currentbranch" "$upstream"
+    read -r resp
+    if [ "$resp" != 'yes' ]; then
+        exit 0
+    fi
+    git reset --hard "$upstream"
+fi

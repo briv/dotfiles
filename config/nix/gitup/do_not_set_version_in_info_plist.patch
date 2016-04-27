@@ -1,0 +1,34 @@
+diff --git a/GitUpKit/GitUpKit.xcodeproj/project.pbxproj b/GitUpKit/GitUpKit.xcodeproj/project.pbxproj
+index 48eb4a5..f5b14ae 100644
+--- a/GitUpKit/GitUpKit.xcodeproj/project.pbxproj
++++ b/GitUpKit/GitUpKit.xcodeproj/project.pbxproj
+@@ -1216,7 +1216,6 @@
+ 				E267E1A41B84D6C500BAB377 /* Frameworks */,
+ 				E267E1A51B84D6C500BAB377 /* Headers */,
+ 				E267E1A61B84D6C500BAB377 /* Resources */,
+-				E267E2751B84EC0700BAB377 /* Set 'GitSHA1' Key in Info.plist */,
+ 			);
+ 			buildRules = (
+ 			);
+@@ -1357,21 +1356,6 @@
+ 			shellScript = "GIT_SHA1=`git rev-parse HEAD`\n\nINFO_PLIST_PATH=\"$CONFIGURATION_BUILD_DIR/$INFOPLIST_PATH\"\n\ndefaults write \"$INFO_PLIST_PATH\" \"GitSHA1\" -string \"$GIT_SHA1\"\n";
+ 			showEnvVarsInLog = 0;
+ 		};
+-		E267E2751B84EC0700BAB377 /* Set 'GitSHA1' Key in Info.plist */ = {
+-			isa = PBXShellScriptBuildPhase;
+-			buildActionMask = 2147483647;
+-			files = (
+-			);
+-			inputPaths = (
+-			);
+-			name = "Set 'GitSHA1' Key in Info.plist";
+-			outputPaths = (
+-			);
+-			runOnlyForDeploymentPostprocessing = 0;
+-			shellPath = "/bin/bash -ex";
+-			shellScript = "GIT_SHA1=`git rev-parse HEAD`\n\nINFO_PLIST_PATH=\"$CONFIGURATION_BUILD_DIR/$INFOPLIST_PATH\"\n\ndefaults write \"$INFO_PLIST_PATH\" \"GitSHA1\" -string \"$GIT_SHA1\"\n";
+-			showEnvVarsInLog = 0;
+-		};
+ /* End PBXShellScriptBuildPhase section */
+
+ /* Begin PBXSourcesBuildPhase section */

@@ -1,0 +1,47 @@
+# Editor
+export EDITOR=nvim
+
+# Locale
+export LC_ALL=en_US.UTF-8
+
+# If there’s duplicates in $path, typeset -U tells to keep only the left-most
+# occurrence. See zsh guide § 2.5.11.
+typeset -U path
+typeset -U fpath
+
+documents_dir=~/Documents/Blaise/
+if [ -d "$documents_dir" ]; then
+    export DOCUMENTS="$documents_dir"
+fi
+unset documents_dir
+
+dev_dir=~/Documents/Blaise/dev
+if [ -d "$dev_dir" ]; then
+    export DEV="$dev_dir"
+fi
+
+
+zsh_env=~/.zshenv
+if [ -f "$zsh_env" ]; then
+    abs_dot_dir=$(dirname "$(dirname "$(dirname "$(readlink "$zsh_env")")")")
+    export DOTFILES="$abs_dot_dir"
+    path=("$DOTFILES/bin" $path)
+    #fpath=("$DOTFILES/config/zsh/functions" $fpath)
+    unset  abs_dot_dir
+fi
+unset zsh_env
+
+nix_sh=~/.nix-profile/etc/profile.d/nix.sh
+if [ -f "$nix_sh" ]; then
+    source "$nix_sh"
+fi
+unset nix_sh
+
+# Add GOPATH
+gopath="$dev_dir/go"
+if [ -d "$gopath" ]; then
+    path=("${path[@]}" "$gopath/bin")
+    export GOPATH="$gopath"
+fi
+unset dev_dir
+unset gopath

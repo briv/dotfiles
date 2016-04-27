@@ -1,0 +1,34 @@
+#!/usr/bin/env sh
+#
+# Outputs all local branches with the date of their latest commit. It can be
+# used to filter branches based on the age of their tip commit.
+#
+# For example, to show all branches whose tip commit is less than a day old:
+#   git local-branch-tips --since='1 day ago'
+#
+# or to show branches whose latest commit is at least a month old:
+#   git local-branch-tips --before='1 month ago'
+#
+# then to delete them:
+#   git local-branch-tips --before='1 month ago' | xargs git branch -d
+
+
+
+set -euo pipefail
+
+if [ $# -eq 0 ]; then
+    git for-each-ref --sort=-committerdate refs/heads \
+        --format="%(HEAD)%(refname:short)|\
+%(color:bold green)%(committerdate:relative)|\
+%(color:blue)%(subject)|\
+%(color:magenta)%(authorname)%(color:reset)" \
+        | column -ts '|'
+else
+    for branch in $(git branch --sort=-committerdate | rg -N -v '^\*?\s*master'); do
+        commit="$(git log --max-count=1 "$1" --format='%H' --no-patch "$branch")"
+        head="$(git rev-parse "$branch")"
+        if [ "$commit" = "$head" ]; then
+            echo "$branch"
+        fi
+    done
+fi

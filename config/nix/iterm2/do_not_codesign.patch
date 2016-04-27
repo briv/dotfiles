@@ -1,0 +1,12 @@
+--- a/Makefile
++++ b/Makefile
+@@ -32,7 +32,8 @@ Dep:
+ 	xcodebuild -parallelizeTargets -target iTerm2 -configuration Deployment
+
+ Deployment:
+-	xcodebuild -parallelizeTargets -target iTerm2 -configuration Deployment && \
++	xcodebuild -parallelizeTargets -target iTerm2 -configuration Deployment \
++		CODE_SIGN_IDENTITY='' && \
+ 	chmod -R go+rX build/Deployment
+
+ Nightly: force

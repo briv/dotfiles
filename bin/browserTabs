@@ -1,0 +1,55 @@
+#!/usr/bin/env osascript -l JavaScript
+
+// from https://github.com/JXA-Cookbook/JXA-Cookbook/wiki/Shell-and-CLI-Interactions
+// To set the exit code
+ObjC.import('stdlib')
+
+const supportedBrowsers = {
+  'safari': 'Safari',
+  'chrome': 'Google Chrome',
+  'firefox': 'Firefox'
+};
+
+function printUsage() {
+  const validNames = Object.keys(supportedBrowsers).map(name => `'${name}'`).join(', ')
+  console.log('Usage: printBrowserTabs <browser>');
+  console.log(`       <browser> can be one of ${validNames}`);
+  console.log('Example: printBrowserTabs safari');
+}
+
+function run(argv) {
+  const appName = argv[0];
+  if (appName === undefined) {
+    console.log("Please provide a browser name as argument.\n");
+    printUsage();
+    $.exit(1)
+  }
+  const browserName = supportedBrowsers[appName];
+  if (browserName === undefined) {
+    console.log(`The browser name '${appName}' was not recognized.\n`);
+    printUsage();
+    $.exit(1)
+  }
+
+  if (Application(browserName).running() !== true) {
+    console.log(`${browserName} doesn't seem to be currently running`);
+    $.exit(1)
+  }
+
+  const runningBrowser = Application(browserName);
+  const windowTabDescriptions = runningBrowser.windows().map(window => {
+    const tabToLine = (tab) => {
+      const name = tab.name();
+      if (name) {
+        return `${tab.name()}: ${tab.url()}`;
+      } else {
+        return `${tab.url()}`;
+      }
+    };
+    const tabDescriptions = window.tabs().map(tabToLine);
+    return tabDescriptions.join("\n");
+  });
+
+  const windowSeperator = "---WINDOW---\n";
+  return windowTabDescriptions.map(el => `${windowSeperator}${el}`).join("\n\n");
+}

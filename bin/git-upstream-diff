@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+#
+# Shows differences between a local branch and its upstream remote, but only
+# for the files which were modified by the remote compared to origin/master.
+# If no branch is passed, the current branch is used.
+# All other arguments are passed as options to git diff. By default, the options
+# passed are --name-status.
+
+set -euo pipefail
+
+# check if first argument is a valid branch
+opt_first_arg=${1:-}
+set +e
+commit=$(git rev-parse --quiet --verify "$opt_first_arg")
+retcode=$?
+set -e
+
+if [ $retcode -eq 0 ]; then
+    branch=$(git name-rev --name-only "$commit")
+    options=( "${@:2}" )
+else
+    branch=$(git name-rev --name-only HEAD)
+    options=( "$@" )
+fi
+
+# check if branch and its remote exist
+if ! git rev-parse --verify --quiet "$branch" > /dev/null \
+    || ! git ls-remote --exit-code --heads origin "$branch" > /dev/null; then
+    echo "The branch '$branch' either doesn't exist locally, or does not have" \
+        "an upstream configured."
+    exit 1
+fi
+remote_branch="$(git for-each-ref --format='%(upstream:short)' \
+    "$(git rev-parse --symbolic-full-name "$branch")")"
+
+if [ ${#options[@]} -eq 0 ] || [ "${options[@]}" = '' ]; then
+    options=( '--name-status' )
+fi
+
+ORIGIN_BASE='origin/master'
+set +o pipefail
+branch_point="$( diff -u \
+                <(git rev-list --first-parent "$remote_branch") \
+                <(git rev-list --first-parent "$ORIGIN_BASE") \
+                | sed -ne 's/^ //p' \
+                | head -1 )"
+set -o pipefail
+
+if [ "$branch_point" = '' ]; then
+    echo "Error: no branch point found for remote branch '$remote_branch' " \
+         "originating from '$ORIGIN_BASE'."
+    exit 1
+fi
+
+upstream_diff_files=( $(git diff --relative --name-only "$branch_point" "$remote_branch") )
+set +e
+git diff --quiet --exit-code "$remote_branch" "$branch" \
+    -- "${upstream_diff_files[@]}"
+diff_ret=$?
+set -e
+
+if [ "$diff_ret" -eq 0 ]; then
+    echo "The upstream file changes are not modified by the local branch" \
+        "'$branch'."
+else
+    echo "Files changed upstream are modified again:"
+    git diff "${options[@]}" "$remote_branch" "$branch" \
+        -- "${upstream_diff_files[@]}"
+fi
